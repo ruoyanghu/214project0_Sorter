@@ -8,5 +8,5 @@
 	scanf("%s",&input1);
 	scanf("%s",&input2);
 	printf("input1: %s input2: %s\n",input1,input2);
-	printf("input1: %s input2: %s\n",input1,input2);
+	
 }
