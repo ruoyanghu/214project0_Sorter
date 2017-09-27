@@ -15,7 +15,7 @@ void cleanBuffer(char *buffer, int size)
         i++;
     }
 }
-char *trim(char *row)
+void trim(char *row)
 {
     int read = 0, write = 0;
     int enClosed = 0;
@@ -57,6 +57,7 @@ char *trim(char *row)
         }
     }
 }
+//give string, give comma num, return the sort column string
 char *getCriticalCol(char *row, int num)
 {
 
@@ -91,18 +92,19 @@ char *getCriticalCol(char *row, int num)
         }
     }
 }
-Row parse(char *row)
+Row parse(char *row, int commaNum)
 {
 
     //give a row string, parse it to Row struct
-    Row newRow;
+	Row newRow;
+    trim(row);
+	strcpy(rowString,row);
+	strcpy(criticalCol,getCriticalCol(row,commaNum));
+	
+	return newRow;
+} 
 
-    //trim?
-    // char trimmedRow[5000];
-    // cleanBuffer(trimmedRow,5000);
-    //newRow;
-    getCriticalCol(row);
-} int findCommaNum(char *buffer, char *target)
+int findCommaNum(char *buffer, char *target)
 {
     int num = -1;
     int cursorCounter = 0;
@@ -155,33 +157,19 @@ int main(int argc, char *argv[])
     char *sortColumn = argv[2];
     int counter = 0;
 
-
-    //this is where the critical colum is
-    int commaNum = -1;
-    int isEnclosed = 0;
-
-
-    //check format
+	//check format
     //error message
     char buffer[5000];
-
     gets(buffer);
-
-    //char iterater
-    int numDigit = 0;
-    char temp = buffer[0];
-
-    isEnclosed = 0;
-    while (temp != '\0') {
-        temp = buffer[numDigit];
-        if (temp == '\"') {
-            isEnclosed = !isEnclosed;
-        }
-        if (temp == ',') {
-        }
-        numDigit++;
-    }
+	int commaNum = findCommaNum(buffer,sortColumn);
+    Row* list;
     while (gets(buffer)) {
+		//create a list of struct
+		
+		list = (Row*)realloc(list,sizeof(Row)*1000);
+		list[0];
+		list+sizeof(Row)*0;
+		parse(buffer,commaNum);
     }
     printf("line: %s\n", buffer);
 }
