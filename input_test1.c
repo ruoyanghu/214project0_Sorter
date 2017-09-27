@@ -34,10 +34,10 @@ typedef struct row{
 	
 	strcpy(row1.rowString,a1);
 	printf("row %s\n",row1.rowString);
-	Row* a = &row1;
+	
 	list = (Row *)malloc(sizeof(Row));
 	
-	memcpy(list,a,sizeof(Row));
+	memcpy(list,&row1,sizeof(Row));
 	
 	printf("get access row %s\n",list[0].rowString);
 	

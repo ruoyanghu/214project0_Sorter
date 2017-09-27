@@ -33,7 +33,7 @@ void trim(char *row)
             if (zero != 0) {
 
                 //nonComma&Comma;criComma
-                if (row[read] = ',' && !enClosed) {
+                if (row[read] == ',' && !enClosed) {
                 }
 
                 else {
@@ -66,7 +66,8 @@ char *getCriticalCol(char *row, int num)
     int charCounter = 0;
     int colPtr = 0;
     int enClosed = 0;
-    char criticalCol[100];
+   char *criticalCol = (char *)malloc(sizeof(char) * 500);;
+
 
     cleanBuffer(criticalCol, 100);
     while (row[charCounter] != '\0') {
@@ -91,6 +92,7 @@ char *getCriticalCol(char *row, int num)
             charCounter++;
         }
     }
+	return criticalCol;
 }
 Row parse(char *row, int commaNum)
 {
@@ -98,8 +100,9 @@ Row parse(char *row, int commaNum)
     //give a row string, parse it to Row struct
 	Row newRow;
     trim(row);
-	strcpy(rowString,row);
-	strcpy(criticalCol,getCriticalCol(row,commaNum));
+	
+	strcpy(newRow.rowString,row);
+	strcpy(newRow.targetCol,getCriticalCol(row,commaNum));
 	
 	return newRow;
 } 
@@ -153,23 +156,44 @@ int findCommaNum(char *buffer, char *target)
 }
 int main(int argc, char *argv[])
 {
+	printf("%s\n","start");
+	
+	
+	printf("argc is %d\n",argc);
+	
+	if(argc!=3){
+		printf("%s\n","argc wrong");
+	}
     char *a1 = argv[1];
     char *sortColumn = argv[2];
-    int counter = 0;
+    printf("%s\n",a1);
+	printf("%s\n",sortColumn);
 
 	//check format
+	
     //error message
     char buffer[5000];
-    gets(buffer);
+	//first line
+    gets(buffer) ;
 	int commaNum = findCommaNum(buffer,sortColumn);
+	if(commaNum==-1){
+		//error message
+		return 0;
+	}
     Row* list;
+	int rowCounter = 0;
+	list = (Row *)malloc(sizeof(Row));
     while (gets(buffer)) {
 		//create a list of struct
+		Row newRow = parse(buffer,commaNum);
 		
-		list = (Row*)realloc(list,sizeof(Row)*1000);
-		list[0];
-		list+sizeof(Row)*0;
-		parse(buffer,commaNum);
+		list = (Row*)realloc(list,sizeof(Row)*rowCounter);
+		memcpy(list+rowCounter,&newRow,sizeof(Row));
+		printf("col is, %s\n",list[rowCounter].targetCol);
     }
-    printf("line: %s\n", buffer);
+	//finish generate list
+	//using merge sort on the list
+	free(list);
+   return 0; 
 }
+
