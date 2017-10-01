@@ -1,11 +1,9 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<unistd.h>
-typedef struct row {
-    char rowString[5000];
-    char targetCol[100];
-} Row;
+
+//gcc -g sorter.c -o sorter &&  ./sorter -c duration <movie.csv
+//valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./sorter -c movie_facebook_likes <movie_full.csv
+
+#include"sorter.h"
+
 void cleanBuffer(char *buffer, int size)
 {
     int i = 0;
@@ -17,26 +15,30 @@ void cleanBuffer(char *buffer, int size)
 }
 void trim(char *row)
 {
-    int read = 0, write = 0;
+    int read = 0, write = 0, zero = 0;
     int enClosed = 0;
-    int zero = 0;
+    int comma = 1;
 
-    while (row[read] != '\0') {
+    while (row[read]) {
         if (row[read] == ' ') {
             zero++;
             read++;
         } else {
             if (row[read] == '"') {
                 enClosed = !enClosed;
-
             }
-            if (zero != 0) {
-
-                //nonComma&Comma;criComma
-                if (row[read] == ',' && !enClosed) {
-                }
-
-                else {
+            //criComma
+            if (row[read] == ',' && !enClosed) {
+                comma = 1;
+                row[write] = row[read];
+                write++;
+                read++;
+                zero = 0;
+                continue;
+            }
+            //nonComma&nonCriComma
+            else {
+                if ((!comma) && (zero != 0)) {
 
                     //write zero
                     int i;
@@ -44,19 +46,22 @@ void trim(char *row)
                     for (i = 0; i <= zero; i++) {
                         row[write + i] = ' ';
                     }
-                    write = write + zero + 1;
-                }
-            } else {
+                    write = write + zero;
 
-                //move write 1
+
+                }
+                comma = 0;
                 row[write] = row[read];
                 write++;
+                read++;
+                zero = 0;
             }
-
-            read++;
         }
     }
+    row[write] = row[read];
+    //printf("trim:%s\n", row);
 }
+
 //give string, give comma num, return the sort column string
 char *getCriticalCol(char *row, int num)
 {
@@ -66,53 +71,70 @@ char *getCriticalCol(char *row, int num)
     int charCounter = 0;
     int colPtr = 0;
     int enClosed = 0;
-   char *criticalCol = (char *)malloc(sizeof(char) * 500);;
+    char *criticalCol = (char *)malloc(sizeof(char) * 500);
 
 
-    cleanBuffer(criticalCol, 100);
+    cleanBuffer(criticalCol, 500);
+
     while (row[charCounter] != '\0') {
         if (row[charCounter] == '"') {
             enClosed = !enClosed;
+			
         }
-        if (row[charCounter] == ',' && enClosed) {
+        if (row[charCounter] == ',' && !enClosed) {
 
             //criticalComma
             commaCounter++;
             if (commaCounter > num) {
+
                 break;
             }
-            continue;
+
         } else {
 
             //if comma, treat as nonComma
             if (commaCounter == num) {
-                criticalCol[colPtr] = row[charCounter];
-                colPtr++;
+				if(row[charCounter]!='"'){
+					criticalCol[colPtr] = row[charCounter];
+					colPtr++;
+				}
+                
             }
-            charCounter++;
+
         }
+        charCounter++;
     }
-	return criticalCol;
+	
+    criticalCol[colPtr] = '\0';
+    return criticalCol;
 }
-Row parse(char *row, int commaNum)
+
+Row *parse(char *row, int commaNum)
 {
 
     //give a row string, parse it to Row struct
-	Row newRow;
+    Row *newRow = (Row *) malloc(sizeof(Row));
+
     trim(row);
-	
-	strcpy(newRow.rowString,row);
-	strcpy(newRow.targetCol,getCriticalCol(row,commaNum));
-	
-	return newRow;
-} 
+
+    strcpy(newRow->rowString, row);
+    char *criCol = getCriticalCol(row, commaNum);
+
+    strcpy(newRow->targetCol, criCol);
+    free(criCol);
+    printf("target: %s\n", newRow->targetCol);
+    return newRow;
+}
 
 int findCommaNum(char *buffer, char *target)
 {
     int num = -1;
+
+    char cursor = 'a';
     int cursorCounter = 0;
+
     int found = 0;
-    char cursor = buffer[cursorCounter];
+
     int ptr = 0;
     char columnBuffer[100];
 
@@ -120,6 +142,7 @@ int findCommaNum(char *buffer, char *target)
     int isEnclosed = 0;
 
     while (cursor) {
+        cursor = buffer[cursorCounter];
         if (cursor == '"') {
             isEnclosed = !isEnclosed;
         }
@@ -133,6 +156,10 @@ int findCommaNum(char *buffer, char *target)
                     cleanBuffer(columnBuffer, 100);
                     found = 1;
                     break;
+                } else {
+                    //compare not successful
+                    cleanBuffer(columnBuffer, 100);
+                    ptr = 0;
                 }
             } else {
                 columnBuffer[ptr] = cursor;
@@ -146,6 +173,9 @@ int findCommaNum(char *buffer, char *target)
     }
     if (columnBuffer[0] != '\0') {
         num++;
+        columnBuffer[ptr - 1] = '\0';
+        columnBuffer[ptr - 2] = '\0';
+        columnBuffer[ptr - 3] = '\0';
         if (strcmp(columnBuffer, target) == 0)
             found = 1;
     }
@@ -156,44 +186,58 @@ int findCommaNum(char *buffer, char *target)
 }
 int main(int argc, char *argv[])
 {
-	printf("%s\n","start");
-	
-	
-	printf("argc is %d\n",argc);
-	
-	if(argc!=3){
-		printf("%s\n","argc wrong");
-	}
+    printf("argc is %d\n", argc);
+
+    if (argc != 3) {
+        printf("%s\n", "argc wrong");
+    }
     char *a1 = argv[1];
     char *sortColumn = argv[2];
-    printf("%s\n",a1);
-	printf("%s\n",sortColumn);
 
-	//check format
-	
+    printf("%s\n", a1);
+    printf("%s\n", sortColumn);
+
+    //check format
+
     //error message
     char buffer[5000];
-	//first line
-    gets(buffer) ;
-	int commaNum = findCommaNum(buffer,sortColumn);
-	if(commaNum==-1){
-		//error message
-		return 0;
-	}
-    Row* list;
-	int rowCounter = 0;
-	list = (Row *)malloc(sizeof(Row));
-    while (gets(buffer)) {
-		//create a list of struct
-		Row newRow = parse(buffer,commaNum);
-		
-		list = (Row*)realloc(list,sizeof(Row)*rowCounter);
-		memcpy(list+rowCounter,&newRow,sizeof(Row));
-		printf("col is, %s\n",list[rowCounter].targetCol);
-    }
-	//finish generate list
-	//using merge sort on the list
-	free(list);
-   return 0; 
-}
 
+    //first line
+    fgets(buffer, 5000, stdin);
+    int commaNum = findCommaNum(buffer, sortColumn);
+
+    if (commaNum == -1) {
+        //error message
+        return 0;
+    }
+    Row *list;
+    int rowCounter = 0;
+
+    list = (Row *) malloc(sizeof(Row));
+	
+    printf("while loop \n");
+    while (fgets(buffer, 5000, stdin)) {
+        printf("buffer is \n%s\n", buffer);
+        //create a list of struct
+        Row *newRow = parse(buffer, commaNum);
+
+        memcpy(list + rowCounter, newRow, sizeof(Row));
+        free(newRow);
+        printf("col is, %s\n", list[rowCounter].targetCol);
+        rowCounter++;
+        printf("realloc = %d\n", rowCounter);
+        list = (Row *) realloc(list, sizeof(Row) * (rowCounter+1));
+        if (list == NULL) {
+            printf("null pointer \n");
+            return 0;
+        }
+    }
+	
+    //finish generate list
+	//check type, give merge sort an input
+	
+    //using merge sort on the list
+	//print
+    free(list);
+    return 0;
+}

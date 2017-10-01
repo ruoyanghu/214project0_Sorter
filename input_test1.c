@@ -1,6 +1,4 @@
-#include<stdio.h>
-#include<stdlib.h>
-#include<unistd.h>
+
 void cleanBuffer(char* buffer, int size);
 void cleanBuffer(char* buffer, int size){
 	int i = 0;
