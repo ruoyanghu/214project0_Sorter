@@ -1,0 +1,2 @@
+Extra Credit:
+My code does not need the user to specify the type of data, it will automatically detect the type (string or numeric) and sort according to the type of the data. There is also no limit for the number of rows of the input file, because I will use realloc method to dynamically create the array for store the input. The only limitation of the input is depending on the RAM. My code can be used on *any* CSV file.
